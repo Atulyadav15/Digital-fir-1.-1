@@ -1,0 +1,16 @@
+# Dependencies and generated output
+node_modules/
+**/node_modules/
+frontend/build/
+coverage/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Runtime data may contain account and complaint information
+backend/data/*.json
+
+# OS/editor files
+.DS_Store
