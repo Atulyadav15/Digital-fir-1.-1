@@ -8,16 +8,18 @@
     },
     "frontend": {
       "root": "frontend",
-      "framework": "create-react-app"
+      "framework": "create-react-app",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "backend",
+          "format": "url",
+          "env": "BACKEND_URL"
+        }
+      ]
     }
   },
   "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": {
-        "service": "backend"
-      }
-    },
     {
       "source": "/(.*)",
       "destination": {
