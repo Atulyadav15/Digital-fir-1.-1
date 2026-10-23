@@ -6,6 +6,9 @@ dotenv.config();
 
 const app = express();
 const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000').split(',').map(origin => origin.trim());
+if (process.env.VERCEL_URL) {
+  allowedOrigins.push(`https://${process.env.VERCEL_URL}`);
+}
 app.disable('x-powered-by');
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -14,7 +17,7 @@ app.use((req, res, next) => {
   next();
 });
 app.use(cors({ origin(origin, callback) {
-  if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+  if (!origin || allowedOrigins.includes(origin) || (process.env.VERCEL && origin.endsWith('.vercel.app'))) return callback(null, true);
   return callback(new Error('Origin is not allowed by CORS.'));
 } }));
 app.use(express.json({ limit: '1mb' }));
@@ -46,4 +49,8 @@ const PORT = process.env.PORT || 5001;
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
   throw new Error('Set JWT_SECRET to a random value of at least 32 characters in backend/.env');
 }
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+if (require.main === module || !process.env.VERCEL) {
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
+
+module.exports = app;

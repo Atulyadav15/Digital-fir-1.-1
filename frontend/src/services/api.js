@@ -1,9 +1,12 @@
 import axios from 'axios';
 
-// Keep this aligned with backend/server.js (port 5001 by default), while
-// allowing deployments to point the frontend at a different API host.
+// When deployed on Vercel with multi-service routing, /api/(.*) rewrites
+// to the backend service on the same domain. In local standalone dev,
+// it falls back to http://localhost:5001/api unless REACT_APP_API_URL is set.
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5001/api'
+  baseURL:
+    process.env.REACT_APP_API_URL ||
+    (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5001/api')
 });
 
 api.interceptors.request.use(config => {
