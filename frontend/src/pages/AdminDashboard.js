@@ -2,15 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import StatusBadge from '../components/StatusBadge';
-import { Loading, EmptyState } from '../components/UI';
+import { Loading, EmptyState, ErrorMessage } from '../components/UI';
 import { getFIRs } from '../services/firService';
 
 export default function AdminDashboard() {
   const [firs, setFirs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    getFIRs().then(r => setFirs(r.data)).catch(() => {}).finally(() => setLoading(false));
+    getFIRs().then(r => setFirs(r.data)).catch(err => setError(err.response?.data?.message || 'Could not load complaints. Please refresh and try again.')).finally(() => setLoading(false));
   }, []);
 
   const stats = {
@@ -25,9 +26,10 @@ export default function AdminDashboard() {
       <Sidebar />
       <main className="dashboard-content">
         <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 700 }}>Admin Dashboard</h1>
-          <p style={{ color: '#6b7280', fontSize: 14 }}>Overview of all FIR records and investigations</p>
+          <h1 style={{ fontSize: 22, fontWeight: 700 }}>Administrator dashboard</h1>
+          <p style={{ color: '#6b7280', fontSize: 14 }}>Overview of fictional complaint records in this project</p>
         </div>
+        <ErrorMessage message={error} />
 
         <div className="stats-grid">
           {[['Total FIRs', stats.total, '📋', '#1a56db'], ['New FIRs', stats.newFirs, '🆕', '#d97706'], ['Under Investigation', stats.investigation, '🔍', '#7c3aed'], ['Resolved FIRs', stats.resolved, '✅', '#059669']].map(([label, val, icon, color]) => (

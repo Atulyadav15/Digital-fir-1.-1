@@ -1,101 +1,199 @@
 const express = require('express');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 const authMiddleware = require('../middleware/auth');
+const store = require('../data/store');
+const { addNotification } = require('../services/notificationService');
 
 const router = express.Router();
-
-let firs = [
-  {
-    id: 'fir-001',
-    referenceNumber: 'FIR-2024-001',
-    userId: 'admin-001',
-    complainantName: 'Rahul Sharma',
-    complainantMobile: '9876543210',
-    complainantEmail: 'rahul@example.com',
-    complainantAddress: '123 MG Road',
-    complainantCity: 'Mumbai',
-    complainantState: 'Maharashtra',
-    complaintType: 'Theft',
-    incidentDate: '2024-01-15',
-    incidentTime: '14:30',
-    description: 'My laptop was stolen from the office.',
-    incidentLocation: 'Office Building, Andheri',
-    incidentCity: 'Mumbai',
-    incidentState: 'Maharashtra',
-    incidentPinCode: '400053',
-    status: 'Under Review',
-    policeStation: 'Andheri Police Station',
-    assignedOfficer: '',
-    remarks: '',
-    submittedDate: '2024-01-16',
-    lastUpdated: '2024-01-17',
-    evidence: []
-  }
+const STATUSES = [
+  'Submitted',
+  'Under Review',
+  'Assigned',
+  'Investigation in Progress',
+  'Resolved',
+  'Closed',
+  'Rejected',
+  'Withdrawn'
 ];
-
-const STATUSES = ['Submitted', 'Under Review', 'Assigned', 'Investigation in Progress', 'Resolved', 'Closed'];
+const CATEGORIES = [
+  'Theft',
+  'Cyber Crime',
+  'Missing Person',
+  'Harassment',
+  'Assault',
+  'Fraud',
+  'Property Dispute',
+  'Other'
+];
+const text = (value, max = 2000) =>
+  typeof value === 'string' ? value.trim().slice(0, max) : '';
 
 router.post('/', authMiddleware, (req, res) => {
+  const body = req.body || {};
+  const idempotencyKey = text(req.get('Idempotency-Key'), 80);
+  if (idempotencyKey && !/^[a-zA-Z0-9_-]{16,80}$/.test(idempotencyKey)) {
+    return res.status(400).json({ message: 'Invalid submission key.' });
+  }
+
+  if (idempotencyKey) {
+    const existing = store.getFIRs().find(
+      item => item.userId === req.user.id && item.idempotencyKey === idempotencyKey
+    );
+    if (existing) return res.status(200).json(existing);
+  }
+  const requiredFields = [
+    'complainantName',
+    'complainantMobile',
+    'title',
+    'complaintType',
+    'incidentDate',
+    'description',
+    'incidentLocation',
+    'incidentCity',
+    'incidentState'
+  ];
+  if (requiredFields.some(key => !text(body[key]))) {
+    return res.status(400).json({ message: 'Complete all required complaint fields.' });
+  }
+  if (!/^\d{10}$/.test(text(body.complainantMobile))) {
+    return res.status(400).json({ message: 'Enter a valid 10-digit mobile number.' });
+  }
+  if (text(body.title).length < 3 || body.title.length > 160) {
+    return res.status(400).json({ message: 'Complaint title must be between 3 and 160 characters.' });
+  }
+  if (text(body.subcategory).length > 100) {
+    return res.status(400).json({ message: 'Subcategory must be 100 characters or fewer.' });
+  }
+  if (!CATEGORIES.includes(text(body.complaintType, 80))) {
+    return res.status(400).json({ message: 'Select a valid complaint category.' });
+  }
+  if (body.consent !== true) {
+    return res.status(400).json({ message: 'Please acknowledge the demo privacy notice.' });
+  }
+  if (
+    typeof body.description !== 'string' ||
+    body.description.trim().length < 20 ||
+    body.description.length > 10000
+  ) {
+    return res.status(400).json({
+      message: 'Description must be between 20 and 10,000 characters.'
+    });
+  }
+  if (Number.isNaN(Date.parse(body.incidentDate)) || new Date(body.incidentDate) > new Date()) {
+    return res.status(400).json({ message: 'Enter a valid incident date.' });
+  }
+
   const year = new Date().getFullYear();
-  const yearFirs = firs.filter(f => f.referenceNumber.startsWith(`FIR-${year}-`));
-  const refNum = `FIR-${year}-${String(yearFirs.length + 1).padStart(3, '0')}`;
+  const sequence = store.countFIRsByYear(year) + 1;
+  const now = new Date().toISOString();
   const fir = {
-    id: uuidv4(),
-    referenceNumber: refNum,
+    id: randomUUID(),
+    referenceNumber: `DEMO-${year}-${String(sequence).padStart(5, '0')}`,
     userId: req.user.id,
-    ...req.body,
-    status: 'Submitted',
-    policeStation: `${req.body.incidentCity || 'City'} Police Station`,
-    assignedOfficer: '',
-    remarks: '',
-    submittedDate: new Date().toISOString().split('T')[0],
-    lastUpdated: new Date().toISOString().split('T')[0],
-    evidence: req.body.evidence || []
+    ...(idempotencyKey ? { idempotencyKey } : {}),
+    complainantName: text(body.complainantName, 120),
+    complainantMobile: text(body.complainantMobile, 10),
+    complainantEmail: text(body.complainantEmail, 200),
+    complainantAddress: text(body.complainantAddress, 500),
+    complainantCity: text(body.complainantCity, 100),
+    complainantState: text(body.complainantState, 100),
+    title: text(body.title),
+    complaintType: text(body.complaintType, 80),
+    subcategory: text(body.subcategory, 100),
+    incidentDate: text(body.incidentDate, 30),
+    incidentTime: text(body.incidentTime, 10),
+    description: body.description,
+    incidentLocation: text(body.incidentLocation, 500),
+    incidentCity: text(body.incidentCity, 100),
+    incidentState: text(body.incidentState, 100),
+    incidentPinCode: text(body.incidentPinCode, 6),
+    status: 'Submitted', policeStation: 'Demo record', assignedOfficer: '', remarks: '',
+    submittedDate: now, lastUpdated: now, consentAt: now, evidence: [],
+    history: [{ status: 'Submitted', note: 'Complaint received by the demonstration system.', at: now }]
   };
-  firs.push(fir);
+  store.addFIR(fir);
+  addNotification(req.user.id, {
+    kind: 'notification.submitted',
+    complaintId: fir.id,
+    referenceNumber: fir.referenceNumber,
+    status: fir.status
+  });
   res.status(201).json(fir);
 });
 
-router.get('/track/:referenceNumber', (req, res) => {
-  const fir = firs.find(f => f.referenceNumber === req.params.referenceNumber);
-  if (!fir) return res.status(404).json({ message: 'FIR not found' });
-  res.json(fir);
+// Tracking is intentionally limited to status metadata; the reference number is not an authorization credential.
+router.get('/track/:referenceNumber', authMiddleware, (req, res) => {
+  const fir = store.findFIRByRef(text(req.params.referenceNumber, 40).toUpperCase());
+  if (!fir) return res.status(404).json({ message: 'Complaint not found.' });
+  if (req.user.role !== 'admin' && fir.userId !== req.user.id) {
+    return res.status(403).json({ message: 'Access denied.' });
+  }
+
+  res.json({
+    referenceNumber: fir.referenceNumber,
+    complaintType: fir.complaintType,
+    status: fir.status,
+    submittedDate: fir.submittedDate,
+    lastUpdated: fir.lastUpdated,
+    assignedOfficer: fir.assignedOfficer || '',
+    history: (fir.history || []).map(({ status, at, note }) => ({ status, at, note }))
+  });
 });
 
 router.get('/', authMiddleware, (req, res) => {
-  if (req.user.role === 'admin') return res.json(firs);
-  res.json(firs.filter(f => f.userId === req.user.id));
+  const all = store.getFIRs();
+  const mine = req.user.role === 'admin' ? all : all.filter(f => f.userId === req.user.id);
+  res.json(mine.sort((a, b) => new Date(b.submittedDate) - new Date(a.submittedDate)));
 });
 
 router.get('/:id', authMiddleware, (req, res) => {
-  const fir = firs.find(f => f.id === req.params.id);
-  if (!fir) return res.status(404).json({ message: 'FIR not found' });
-  if (req.user.role !== 'admin' && fir.userId !== req.user.id)
-    return res.status(403).json({ message: 'Access denied' });
+  const fir = store.findFIRById(req.params.id);
+  if (!fir) return res.status(404).json({ message: 'Complaint not found.' });
+  if (req.user.role !== 'admin' && fir.userId !== req.user.id) {
+    return res.status(403).json({ message: 'Access denied.' });
+  }
   res.json(fir);
 });
 
 router.put('/:id', authMiddleware, (req, res) => {
-  const idx = firs.findIndex(f => f.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ message: 'FIR not found' });
-  firs[idx] = { ...firs[idx], ...req.body, lastUpdated: new Date().toISOString().split('T')[0] };
-  res.json(firs[idx]);
+  if (req.user.role !== 'admin') return res.status(403).json({ message: 'Access denied.' });
+  return res.status(405).json({ message: 'Use the status update endpoint.' });
 });
 
 router.put('/:id/status', authMiddleware, (req, res) => {
-  if (req.user.role !== 'admin') return res.status(403).json({ message: 'Access denied' });
-  const idx = firs.findIndex(f => f.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ message: 'FIR not found' });
-  const { status, assignedOfficer, remarks } = req.body;
-  if (!STATUSES.includes(status)) return res.status(400).json({ message: 'Invalid status' });
-  firs[idx] = { ...firs[idx], status, assignedOfficer: assignedOfficer || firs[idx].assignedOfficer, remarks: remarks || firs[idx].remarks, lastUpdated: new Date().toISOString().split('T')[0] };
-  res.json(firs[idx]);
+  if (req.user.role !== 'admin') return res.status(403).json({ message: 'Access denied.' });
+  const fir = store.findFIRById(req.params.id);
+  if (!fir) return res.status(404).json({ message: 'Complaint not found.' });
+  const { status } = req.body || {};
+  if (!STATUSES.includes(status)) {
+    return res.status(400).json({ message: 'Invalid status.' });
+  }
+  if (!text(req.body?.remarks, 1000)) {
+    return res.status(400).json({ message: 'A status update note is required.' });
+  }
+  const at = new Date().toISOString();
+  const note = text(req.body.remarks, 1000);
+  const updated = store.updateFIR(fir.id, {
+    status,
+    assignedOfficer: text(req.body.assignedOfficer, 120) || fir.assignedOfficer,
+    remarks: note || fir.remarks,
+    lastUpdated: at,
+    history: [...(fir.history || []), { status, note: note || 'Status updated by demo administrator.', at }]
+  });
+  addNotification(fir.userId, {
+    kind: 'notification.statusChanged',
+    complaintId: fir.id,
+    referenceNumber: fir.referenceNumber,
+    status
+  });
+  res.json(updated);
 });
 
 router.delete('/:id', authMiddleware, (req, res) => {
-  if (req.user.role !== 'admin') return res.status(403).json({ message: 'Access denied' });
-  firs = firs.filter(f => f.id !== req.params.id);
-  res.json({ message: 'FIR deleted' });
+  if (req.user.role !== 'admin') return res.status(403).json({ message: 'Access denied.' });
+  if (!store.findFIRById(req.params.id)) return res.status(404).json({ message: 'Complaint not found.' });
+  store.deleteFIR(req.params.id);
+  res.json({ message: 'Demo complaint deleted.' });
 });
 
 module.exports = router;

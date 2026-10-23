@@ -24,9 +24,9 @@ export default function FIRDetails() {
   if (error) return <div className="dashboard-layout"><Sidebar /><main className="dashboard-content"><ErrorMessage message={error} /></main></div>;
 
   const sections = [
-    { title: '📋 FIR Information', fields: [['FIR Number', fir.referenceNumber], ['Submission Date', fir.submittedDate], ['Last Updated', fir.lastUpdated], ['Police Station', fir.policeStation]] },
+    { title: '📋 Complaint Information', fields: [['Reference Number', fir.referenceNumber], ['Submission Date', new Date(fir.submittedDate).toLocaleString()], ['Last Updated', new Date(fir.lastUpdated).toLocaleString()], ['Status', fir.status]] },
     { title: '👤 Complainant Information', fields: [['Name', fir.complainantName], ['Mobile', fir.complainantMobile], ['Email', fir.complainantEmail || '—'], ['Address', `${fir.complainantAddress || ''}, ${fir.complainantCity}, ${fir.complainantState}`]] },
-    { title: '⚠️ Incident Information', fields: [['Complaint Type', fir.complaintType], ['Incident Date', fir.incidentDate], ['Incident Time', fir.incidentTime || '—'], ['Location', `${fir.incidentLocation}, ${fir.incidentCity}, ${fir.incidentState}`]] },
+    { title: '⚠️ Incident Information', fields: [['Title', fir.title || '—'], ['Category', fir.complaintType], ['Subcategory', fir.subcategory || '—'], ['Incident Date', fir.incidentDate], ['Incident Time', fir.incidentTime || '—'], ['Location', `${fir.incidentLocation}, ${fir.incidentCity}, ${fir.incidentState}`]] },
   ];
 
   return (
@@ -36,7 +36,7 @@ export default function FIRDetails() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
           <div>
             <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: '#1a56db', cursor: 'pointer', fontSize: 14, marginBottom: 4 }}>← Back</button>
-            <h1 style={{ fontSize: 22, fontWeight: 700 }}>FIR Details</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 700 }}>Complaint details</h1>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button className="btn btn-secondary" onClick={handlePrint}>🖨️ Print / Download</button>
@@ -96,6 +96,10 @@ export default function FIRDetails() {
             </div>
           )}
         </div>
+        {fir.history?.length > 0 && <div className="card" style={{ marginTop: 16 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>Status history</h3>
+          <ol className="complaint-history">{fir.history.map((event, index) => <li key={`${event.at}-${index}`}><div><strong>{event.status}</strong><time>{new Date(event.at).toLocaleString()}</time>{event.note && <p>{event.note}</p>}</div></li>)}</ol>
+        </div>}
       </main>
     </div>
   );

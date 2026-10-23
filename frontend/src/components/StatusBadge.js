@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '../context/LanguageContext';
 
 const STATUS_MAP = {
   'Submitted': 'badge-submitted',
@@ -7,8 +8,11 @@ const STATUS_MAP = {
   'Investigation in Progress': 'badge-investigation',
   'Resolved': 'badge-resolved',
   'Closed': 'badge-closed',
+  'Rejected': 'badge-rejected',
+  'Withdrawn': 'badge-closed',
 };
 
 export default function StatusBadge({ status }) {
-  return <span className={`badge ${STATUS_MAP[status] || 'badge-submitted'}`}>{status}</span>;
+  const { t } = useLanguage();
+  return <span className={`badge ${STATUS_MAP[status] || 'badge-submitted'}`}>{t(`status.${status}`)}</span>;
 }

@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const api = axios.create({ baseURL: 'http://localhost:5001/api' });
+// Keep this aligned with backend/server.js (port 5001 by default), while
+// allowing deployments to point the frontend at a different API host.
+const api = axios.create({
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5001/api'
+});
 
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token');

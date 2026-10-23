@@ -1,61 +1,25 @@
 import React from 'react';
+import { FiClipboard, FiLock, FiSearch } from 'react-icons/fi';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
 const cards = [
-  { icon: '💻', title: 'Digital Filing', desc: 'Submit FIR complaints online from anywhere, anytime — no need to visit the police station for initial filing.' },
-  { icon: '🔒', title: 'Secure Processing', desc: 'All data is encrypted and processed securely following government data protection guidelines.' },
-  { icon: '📍', title: 'Easy Tracking', desc: 'Track your FIR status in real-time using your unique reference number.' },
+  { icon: FiClipboard, title: 'Guided submission', desc: 'Submit incident details through a clear, step-by-step form and review them before submission.' },
+  { icon: FiLock, title: 'Account based access', desc: 'Passwords are protected and complaint details are limited to the account owner and service administrators.' },
+  { icon: FiSearch, title: 'Status tracking', desc: 'Use your complaint reference to view status and recorded updates.' }
 ];
 
 export default function About() {
-  return (
-    <div className="page-wrapper">
-      <Navbar />
-      <main style={{ flex: 1 }}>
-        <section style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #1a56db 100%)', padding: '60px 0', color: '#fff', textAlign: 'center' }}>
-          <div className="container">
-            <h1 style={{ fontSize: 36, fontWeight: 800, marginBottom: 12 }}>About Digital FIR System</h1>
-            <p style={{ fontSize: 18, color: '#bfdbfe', maxWidth: 600, margin: '0 auto' }}>A modern platform for digital FIR filing and management.</p>
-          </div>
-        </section>
-
-        <section style={{ padding: '60px 0' }}>
-          <div className="container" style={{ maxWidth: 800 }}>
-            <div className="card" style={{ padding: 36, marginBottom: 32 }}>
-              <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 16, color: '#111827' }}>Our Mission</h2>
-              <p style={{ fontSize: 16, color: '#374151', lineHeight: 1.9 }}>
-                The Digital FIR System is a web-based platform designed to simplify FIR filing and record management. It provides citizens with an easy way to submit complaints digitally and track their status, while helping authorized personnel efficiently manage FIR records.
-              </p>
-              <p style={{ fontSize: 16, color: '#374151', lineHeight: 1.9, marginTop: 14 }}>
-                Our goal is to make the process of filing a First Information Report (FIR) transparent, accessible, and efficient for every citizen of India — regardless of their location or technical expertise.
-              </p>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20, marginBottom: 32 }}>
-              {cards.map(c => (
-                <div key={c.title} className="card" style={{ textAlign: 'center', padding: 28 }}>
-                  <div style={{ fontSize: 44, marginBottom: 14 }}>{c.icon}</div>
-                  <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 8 }}>{c.title}</h3>
-                  <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.7 }}>{c.desc}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="card" style={{ padding: 28 }}>
-              <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>Key Features</h2>
-              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {['Online FIR submission without visiting the police station', 'Real-time FIR status tracking with reference number', 'Secure document and evidence upload', 'Multi-step guided form for easy complaint filing', 'Admin dashboard for officers to manage and update FIRs', 'Mobile-responsive design for access on any device'].map(f => (
-                  <li key={f} style={{ display: 'flex', gap: 10, fontSize: 15, color: '#374151' }}>
-                    <span style={{ color: '#059669', fontWeight: 700 }}>✓</span>{f}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </section>
-      </main>
-      <Footer />
-    </div>
-  );
+  return <div className="page-wrapper">
+    <Navbar />
+    <main className="main-content">
+      <section className="hero" style={{ padding: '58px 0' }}><div className="container"><span className="eyebrow">About Civic Desk</span><h1 style={{ fontSize: 42, margin: '14px 0 8px' }}>A clear way to manage complaints</h1><p style={{ color: '#d6e3f6', maxWidth: 680 }}>Civic Desk helps people submit a complaint, follow its status, and review updates in one place.</p></div></section>
+      <section className="section-pad"><div className="container">
+        <div className="section-heading"><h2>From submission to resolution</h2><p>Create an account, submit complaint details, and follow status history. Service administrators can review records and add timestamped updates.</p></div>
+        <div className="feature-grid about-grid">{cards.map(({ icon: Icon, title, desc }) => <article className="feature-card" key={title}><span className="feature-icon"><Icon /></span><h3>{title}</h3><p>{desc}</p></article>)}</div>
+        <div className="service-warning"><strong>Service information</strong><p>Civic Desk is an independent complaint management service, not an official government or police portal. It does not create legally registered FIRs, contact emergency services, or integrate with police systems. Do not use this site for emergencies. Contact local emergency services or your nearest police station for urgent assistance.</p></div>
+      </div></section>
+    </main>
+    <Footer />
+  </div>;
 }

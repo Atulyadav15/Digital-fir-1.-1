@@ -6,7 +6,7 @@ import Modal from '../components/Modal';
 import { Loading, ErrorMessage, SuccessMessage } from '../components/UI';
 import { getFIR, updateFIRStatus } from '../services/firService';
 
-const STATUSES = ['Submitted', 'Under Review', 'Assigned', 'Investigation in Progress', 'Resolved', 'Closed'];
+const STATUSES = ['Submitted', 'Under Review', 'Assigned', 'Investigation in Progress', 'Resolved', 'Closed', 'Rejected', 'Withdrawn'];
 
 export default function FIRReview() {
   const { id } = useParams();
@@ -63,7 +63,7 @@ export default function FIRReview() {
           <div>
             {[
               { title: '👤 Complainant', fields: [['Name', fir.complainantName], ['Mobile', fir.complainantMobile], ['Email', fir.complainantEmail || '—'], ['City', fir.complainantCity], ['State', fir.complainantState]] },
-              { title: '⚠️ Incident', fields: [['Type', fir.complaintType], ['Date', fir.incidentDate], ['Time', fir.incidentTime || '—'], ['Location', `${fir.incidentLocation}, ${fir.incidentCity}`]] },
+              { title: '⚠️ Incident', fields: [['Title', fir.title || '—'], ['Category', fir.complaintType], ['Subcategory', fir.subcategory || '—'], ['Date', fir.incidentDate], ['Time', fir.incidentTime || '—'], ['Location', `${fir.incidentLocation}, ${fir.incidentCity}`]] },
             ].map(sec => (
               <div key={sec.title} className="card" style={{ marginBottom: 16 }}>
                 <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>{sec.title}</h3>
@@ -81,6 +81,10 @@ export default function FIRReview() {
               <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>📝 Description</h3>
               <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.8, background: '#f9fafb', padding: 14, borderRadius: 8 }}>{fir.description}</p>
             </div>
+            {fir.history?.length > 0 && <div className="card" style={{ marginTop: 16 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>Status history and admin notes</h3>
+              <ol className="complaint-history">{fir.history.map((event, index) => <li key={`${event.at}-${index}`}><div><strong>{event.status}</strong><time>{new Date(event.at).toLocaleString()}</time>{event.note && <p>{event.note}</p>}</div></li>)}</ol>
+            </div>}
           </div>
 
           <div className="card" style={{ position: 'sticky', top: 20 }}>
@@ -96,10 +100,11 @@ export default function FIRReview() {
               <input className="form-control" value={form.assignedOfficer} onChange={e => setForm(f => ({ ...f, assignedOfficer: e.target.value }))} placeholder="Officer name" />
             </div>
             <div className="form-group">
-              <label className="form-label">Investigation Remarks</label>
-              <textarea className="form-control" rows={4} value={form.remarks} onChange={e => setForm(f => ({ ...f, remarks: e.target.value }))} placeholder="Add investigation notes..." />
+              <label className="form-label" htmlFor="status-note">Status update note *</label>
+              <textarea id="status-note" className="form-control" rows={4} required maxLength={1000} value={form.remarks} onChange={e => setForm(f => ({ ...f, remarks: e.target.value }))} placeholder="Explain this status update..." />
+              <small style={{ color: '#718096', fontSize: 11 }}>A note is required and will be recorded in the complaint history.</small>
             </div>
-            <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => setModal(true)}>Update FIR Status</button>
+            <button className="btn btn-primary" style={{ width: '100%' }} disabled={!form.remarks.trim()} onClick={() => setModal(true)}>Update complaint status</button>
           </div>
         </div>
 

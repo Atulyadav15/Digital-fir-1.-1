@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const DATA_DIR = path.join(__dirname);
+const DATA_DIR = process.env.DIGITAL_FIR_DATA_DIR || __dirname;
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const FIRS_FILE = path.join(DATA_DIR, 'firs.json');
 
@@ -79,7 +79,8 @@ const store = {
     writeJSON(USERS_FILE, users);
   },
   findUserByEmail(email) {
-    return this.getUsers().find(u => u.email === email) || null;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    return this.getUsers().find(u => String(u.email || '').trim().toLowerCase() === normalizedEmail) || null;
   },
   findUserById(id) {
     return this.getUsers().find(u => u.id === id) || null;
@@ -129,7 +130,7 @@ const store = {
     this.saveFIRs(firs);
   },
   countFIRsByYear(year) {
-    return this.getFIRs().filter(f => f.referenceNumber.startsWith(`FIR-${year}-`)).length;
+    return this.getFIRs().filter(f => f.referenceNumber.startsWith(`DEMO-${year}-`)).length;
   }
 };
 

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { login as loginApi } from '../services/authService';
 import { ErrorMessage } from '../components/UI';
+import { useLanguage } from '../context/LanguageContext';
 
 function validate(form) {
   const errs = {};
@@ -18,6 +19,7 @@ export default function Login() {
   const [apiError, setApiError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); setErrors(e => ({ ...e, [k]: '' })); };
@@ -32,7 +34,9 @@ export default function Login() {
       login(data.token, data.user);
       navigate(data.user.role === 'admin' ? '/admin' : '/dashboard');
     } catch (err) {
-      setApiError(err.response?.data?.message || 'Login failed. Please try again.');
+      setApiError(err.response?.data?.message || (err.request
+        ? 'Cannot reach the server. Make sure the backend is running on port 5001, then try again.'
+        : 'Login failed. Please try again.'));
     } finally { setLoading(false); }
   };
 
@@ -40,22 +44,22 @@ export default function Login() {
     <div style={s.page}>
       <div style={s.card}>
         <div style={s.header}>
-          <Link to="/" style={s.logo}>🏛️ Digital FIR System</Link>
-          <h1 style={s.title}>Welcome Back</h1>
-          <p style={s.sub}>Sign in to your account</p>
+          <Link to="/" style={s.logo}>Civic Desk</Link>
+          <h1 style={s.title}>{t('auth.loginTitle')}</h1>
+          <p style={s.sub}>{t('auth.loginSub')}</p>
         </div>
 
         <ErrorMessage message={apiError} />
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Email Address</label>
-            <input className={`form-control ${errors.email ? 'error' : ''}`} type="email" placeholder="you@example.com" value={form.email} onChange={e => set('email', e.target.value)} />
+            <label className="form-label" htmlFor="login-email">{t('auth.email')}</label>
+            <input id="login-email" autoComplete="email" className={`form-control ${errors.email ? 'error' : ''}`} type="email" placeholder="you@example.com" value={form.email} onChange={e => set('email', e.target.value)} />
             {errors.email && <div className="form-error">{errors.email}</div>}
           </div>
           <div className="form-group">
-            <label className="form-label">Password</label>
-            <input className={`form-control ${errors.password ? 'error' : ''}`} type="password" placeholder="Enter your password" value={form.password} onChange={e => set('password', e.target.value)} />
+            <label className="form-label" htmlFor="login-password">{t('auth.password')}</label>
+            <input id="login-password" autoComplete="current-password" className={`form-control ${errors.password ? 'error' : ''}`} type="password" placeholder="Enter your password" value={form.password} onChange={e => set('password', e.target.value)} />
             {errors.password && <div className="form-error">{errors.password}</div>}
           </div>
           <div style={s.row}>
@@ -63,27 +67,24 @@ export default function Login() {
             <Link to="/forgot-password" style={s.forgot}>Forgot password?</Link>
           </div>
           <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: 8 }} disabled={loading}>
-            {loading ? 'Signing in...' : 'Login'}
+            {loading ? 'Signing in…' : t('auth.loginButton')}
           </button>
         </form>
 
         <div style={s.divider}><span>or</span></div>
         <p style={s.switchText}>Don't have an account? <Link to="/register" style={s.switchLink}>Create an account</Link></p>
 
-        <div style={s.demo}>
-          <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 6 }}>Demo Credentials:</p>
-          <p style={{ fontSize: 12, color: '#6b7280' }}>Admin: admin@digitalfir.gov / password</p>
-        </div>
+        <p style={s.notice}>Civic Desk is an independent service and is not an official government or police portal.</p>
       </div>
     </div>
   );
 }
 
 const s = {
-  page: { minHeight: '100vh', background: 'linear-gradient(135deg, #1e3a8a 0%, #1a56db 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 },
+  page: { minHeight: '100vh', background: 'linear-gradient(135deg, #061f49 0%, #092D67 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 },
   card: { background: '#fff', borderRadius: 16, padding: '40px 36px', width: '100%', maxWidth: 420, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' },
   header: { textAlign: 'center', marginBottom: 28 },
-  logo: { fontSize: 18, fontWeight: 700, color: '#1a56db', display: 'block', marginBottom: 16 },
+  logo: { fontSize: 18, fontWeight: 700, color: '#092D67', display: 'block', marginBottom: 16 },
   title: { fontSize: 24, fontWeight: 700, color: '#111827', marginBottom: 4 },
   sub: { fontSize: 14, color: '#6b7280' },
   row: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
@@ -92,5 +93,5 @@ const s = {
   divider: { textAlign: 'center', margin: '20px 0', position: 'relative', color: '#9ca3af', fontSize: 13 },
   switchText: { textAlign: 'center', fontSize: 14, color: '#6b7280' },
   switchLink: { color: '#1a56db', fontWeight: 600 },
-  demo: { marginTop: 20, padding: '12px', background: '#f9fafb', borderRadius: 8, textAlign: 'center' },
+  notice: { marginTop: 20, padding: 12, background: '#f9fafb', borderRadius: 8, textAlign: 'center', color: '#64748b', fontSize: 11, lineHeight: 1.5 },
 };

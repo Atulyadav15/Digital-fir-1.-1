@@ -1,6 +1,6 @@
 import api from './api';
 
-export const submitFIR = (data) => api.post('/firs', data);
+export const submitFIR = (data, idempotencyKey) => api.post('/firs', data, { headers: { 'Idempotency-Key': idempotencyKey } });
 export const getFIRs = () => api.get('/firs');
 export const getFIR = (id) => api.get(`/firs/${id}`);
 export const trackFIR = (ref) => api.get(`/firs/track/${ref}`);
